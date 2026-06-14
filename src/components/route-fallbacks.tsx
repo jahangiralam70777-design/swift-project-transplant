@@ -1,6 +1,7 @@
+import { useEffect, useRef, useState } from "react";
 import { Link, useRouter } from "@tanstack/react-router";
 import { AlertTriangle, RefreshCw, Wifi, ShieldAlert, Search, Clock, LifeBuoy } from "lucide-react";
-import { classifyError, type ErrorKind } from "@/lib/error-classify";
+import { classifyError, isTransientError, type ErrorKind } from "@/lib/error-classify";
 
 // Instant navigation: never render a pending fallback between routes.
 // Previous page stays on screen until the next route is ready (TanStack
@@ -45,12 +46,38 @@ const KIND_ICON: Record<ErrorKind, typeof AlertTriangle> = {
 
 export function DefaultErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
-  if (typeof console !== "undefined") {
-    // Detailed log for the team; UI shows only the friendly message.
-    console.error("[route-error]", error);
-  }
   const { kind, title, message } = classifyError(error, "section");
   const Icon = KIND_ICON[kind];
+  const attemptsRef = useRef(0);
+  const [retrying, setRetrying] = useState(false);
+
+  // Detailed log for the team; UI shows only the friendly message.
+  useEffect(() => {
+    console.error("[route-error]", { path: router.state.location.pathname, error });
+  }, [error, router]);
+
+  const runRetry = async () => {
+    setRetrying(true);
+    try {
+      await router.invalidate();
+      reset();
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  // Automatic retry (max 2 attempts, exponential backoff) for transient failures.
+  useEffect(() => {
+    if (!isTransientError(error)) return;
+    if (attemptsRef.current >= 2) return;
+    const delay = 600 * Math.pow(2, attemptsRef.current); // 600ms, 1200ms
+    attemptsRef.current += 1;
+    const id = window.setTimeout(() => {
+      void runRetry();
+    }, delay);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error]);
 
   return (
     <div
@@ -66,13 +93,12 @@ export function DefaultErrorFallback({ error, reset }: { error: Error; reset: ()
         <p className="mt-2 text-sm text-muted-foreground">{message}</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            onClick={runRetry}
+            disabled={retrying}
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
           >
-            <RefreshCw className="h-4 w-4" aria-hidden /> Try again
+            <RefreshCw className={`h-4 w-4 ${retrying ? "animate-spin" : ""}`} aria-hidden />{" "}
+            {retrying ? "Retrying…" : "Retry"}
           </button>
           <button
             onClick={() => router.history.back()}
