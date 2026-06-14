@@ -282,9 +282,7 @@ function RootInner() {
   const isAdminRoute = !isAdminLogin && (path === "/admin" || path.startsWith("/admin/"));
   const isStudentRoute = STUDENT_ROUTES.includes(path);
 
-  const hasPersistedSession = useMemo(() => {
-    return hasLocalAuthSession();
-  }, [path, user]);
+  const hasPersistedSession = hasLocalAuthSession();
 
   const redirectTo = useMemo(() => {
     if (typeof window === "undefined") return null;
