@@ -38,11 +38,8 @@ import appCss from "../styles.css?url";
 // internal state to end users.
 if (typeof window !== "undefined" && import.meta.env.PROD) {
   const noop = () => undefined;
-  // eslint-disable-next-line no-console
   console.log = noop;
-  // eslint-disable-next-line no-console
   console.debug = noop;
-  // eslint-disable-next-line no-console
   console.info = noop;
 }
 
