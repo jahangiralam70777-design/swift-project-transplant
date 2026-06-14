@@ -26,6 +26,15 @@ export const getRouter = () => {
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
       },
       mutations: {
+        onError: (error) => {
+          const { reportError } = require("@/lib/error-reporter");
+          reportError({
+            source: "frontend",
+            severity: "high",
+            message: error instanceof Error ? error.message : "Mutation failed",
+            payload: { error },
+          });
+        },
         retry: (failureCount, error) => failureCount < 1 && isTransientError(error),
       },
     },

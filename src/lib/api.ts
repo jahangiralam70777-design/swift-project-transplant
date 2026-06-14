@@ -17,7 +17,10 @@ async function request<T>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error((err as { error?: string }).error ?? res.statusText);
+    const message = (err as { error?: string }).error ?? res.statusText;
+    const error = new Error(message);
+    (error as any).status = res.status;
+    throw error;
   }
   return res.json() as Promise<T>;
 }
