@@ -15,6 +15,9 @@ export const getRouter = () => {
         // Reuse cached data across navigations — keeps page switches instant.
         staleTime: 60_000,
         gcTime: 5 * 60_000,
+        // AutoRefreshController owns focus/reconnect/visibility refresh
+        // globally (see src/lib/auto-refresh.tsx). Query's own listeners
+        // stay off so we don't double-fire when both trigger together.
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
         // Auto-retry only transient failures (network/timeout/5xx/rate-limit).
