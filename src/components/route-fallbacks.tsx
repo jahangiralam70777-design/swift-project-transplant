@@ -3,7 +3,6 @@ import { useQueryErrorResetBoundary } from "@tanstack/react-query";
 import { Link, useRouter } from "@tanstack/react-router";
 import { AlertTriangle, RefreshCw, Wifi, ShieldAlert, Search, Clock, LifeBuoy } from "lucide-react";
 import { classifyError, isTransientError, type ErrorKind } from "@/lib/error-classify";
-import { SectionErrorFallback } from "@/components/ui/section-state";
 import { logDataLoadFailure } from "@/lib/safe-request";
 
 // Instant navigation: never render a pending fallback between routes.
