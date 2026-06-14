@@ -86,7 +86,16 @@ export function classifyError(error: unknown, scope = "page"): ClassifiedError {
 
   return {
     kind: "unknown",
-    title: "We hit a small bump",
-    message: `We couldn't load this ${scope} right now. Please try again — if it keeps happening, contact support.`,
+    title: "Something went wrong",
+    message: `We couldn't load this ${scope}. This is usually temporary — try again, or head back and reopen it.`,
   };
+}
+
+/**
+ * Whether the given error is likely transient and worth auto-retrying.
+ * Auth/notfound failures will not recover from a blind retry.
+ */
+export function isTransientError(error: unknown): boolean {
+  const { kind } = classifyError(error);
+  return kind === "network" || kind === "timeout" || kind === "server" || kind === "ratelimit";
 }

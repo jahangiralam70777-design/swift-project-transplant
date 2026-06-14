@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { isTransientError } from "@/lib/error-classify";
 import {
   DefaultErrorFallback,
   DefaultNotFoundFallback,
@@ -16,7 +17,13 @@ export const getRouter = () => {
         gcTime: 5 * 60_000,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
-        retry: 1,
+        // Auto-retry only transient failures (network/timeout/5xx/rate-limit).
+        // Auth and not-found failures fail fast — retrying won't help.
+        retry: (failureCount, error) => failureCount < 2 && isTransientError(error),
+        retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+      },
+      mutations: {
+        retry: (failureCount, error) => failureCount < 1 && isTransientError(error),
       },
     },
   });
